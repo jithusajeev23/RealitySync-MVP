@@ -18,6 +18,17 @@ cred = credentials.Certificate(firebase_key_dict)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+@app.route('/')
+def home():
+    return jsonify({
+        "message": "✅ RealitySync API is running!",
+        "available_endpoints": {
+            "POST /upload": "Upload a file and get reality hash + trust receipt",
+            "GET /verify/<hash>": "Verify a file by hash",
+            "GET /receipts": "List all verified receipts"
+        }
+    }), 200
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
