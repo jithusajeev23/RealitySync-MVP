@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import hashlib
 from datetime import datetime
+import os
+import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 
@@ -9,8 +11,10 @@ from firebase_admin import credentials, firestore
 app = Flask(__name__)
 CORS(app)
 
-# Initialize Firebase
-cred = credentials.Certificate("realitysync-key.json")
+# Load Firebase credentials from environment variable
+firebase_key_json_str = os.environ["FIREBASE_KEY_JSON_ESCAPED"]
+firebase_key_dict = json.loads(firebase_key_json_str)
+cred = credentials.Certificate(firebase_key_dict)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
