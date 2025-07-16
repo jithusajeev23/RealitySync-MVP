@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Verify from "./Verify";
-import Receipts from "./pages/Receipts"; // ✅ NEW
+import Receipts from "./pages/Receipts";
 import "./App.css";
+
+// ✅ Use environment variable for backend URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function Upload() {
   const [file, setFile] = useState(null);
@@ -20,7 +23,7 @@ function Upload() {
     formData.append("file", file);
 
     try {
-      const response = await fetch("http://localhost:5000/upload", {
+      const response = await fetch(`${API_BASE_URL}/upload`, {
         method: "POST",
         body: formData,
       });
@@ -44,7 +47,7 @@ function Upload() {
       <h1>RealitySync – Upload File for Verification</h1>
       <nav>
         <Link to="/verify">🔍 Go to Verify Page</Link> |{" "}
-        <Link to="/receipts">📂 View Trust Receipts</Link> {/* ✅ NEW */}
+        <Link to="/receipts">📂 View Trust Receipts</Link>
       </nav>
       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
       <button onClick={handleUpload}>Upload</button>
@@ -70,7 +73,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Upload />} />
         <Route path="/verify" element={<Verify />} />
-        <Route path="/receipts" element={<Receipts />} /> {/* ✅ NEW */}
+        <Route path="/receipts" element={<Receipts />} />
       </Routes>
     </Router>
   );
