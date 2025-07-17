@@ -8,7 +8,7 @@ const VerifyPage = () => {
   const handleVerify = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://realitysync-api.onrender.com/verify/${hash}`);
+      const response = await fetch(`https://realitysync-backend.onrender.com/verify/${hash}`);
       const data = await response.json();
       setResult(data);
     } catch (err) {
