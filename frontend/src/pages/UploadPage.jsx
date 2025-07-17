@@ -33,7 +33,7 @@ function UploadPage() {
 
       const data = await res.json();
 
-      if (res.ok) {
+      if (res.ok && data.trustReceipt) {
         setTrustReceipt(data.trustReceipt);
       } else {
         setError(`❌ Upload failed: ${data.error || "Unknown error"}`);
@@ -48,6 +48,7 @@ function UploadPage() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
       <h1 className="text-3xl font-bold mb-6">RealitySync</h1>
+
       <div className="bg-white shadow p-6 rounded w-full max-w-md">
         <input
           type="file"
@@ -62,7 +63,7 @@ function UploadPage() {
           {uploading ? "Uploading..." : "Upload File"}
         </button>
 
-        {/* ✅ Show Trust Receipt with clickable link */}
+        {/* ✅ Trust Receipt Display */}
         {trustReceipt && (
           <div className="text-green-600 mt-4 text-sm">
             ✅ Uploaded successfully! <br />
@@ -76,8 +77,10 @@ function UploadPage() {
           </div>
         )}
 
-        {/* ❌ Show Error */}
-        {error && <p className="mt-4 text-red-600 text-sm">{error}</p>}
+        {/* ❌ Error Display */}
+        {error && (
+          <p className="mt-4 text-red-600 text-sm">{error}</p>
+        )}
       </div>
     </div>
   );
