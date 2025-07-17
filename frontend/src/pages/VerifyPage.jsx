@@ -7,26 +7,33 @@ const VerifyPage = () => {
 
   const handleVerify = async () => {
     setLoading(true);
+
+    // ✅ Clean the hash input if it starts with 'trust://'
+    const cleanedHash = hash.replace(/^trust:\/\//, "");
+
     try {
-      const response = await fetch(`https://realitysync-backend.onrender.com/verify/${hash}`);
+      const response = await fetch(`https://realitysync-backend.onrender.com/verify?hash=${cleanedHash}`);
       const data = await response.json();
       setResult(data);
     } catch (err) {
       setResult({ error: "Server error. Please try again." });
     }
+
     setLoading(false);
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-100">
       <h1 className="text-3xl font-bold mb-4">🔍 Verify RealitySync Receipt</h1>
+
       <input
         className="border p-2 w-full max-w-md mb-4 rounded"
         type="text"
-        placeholder="Enter reality hash"
+        placeholder="Enter reality hash (e.g., trust://...)"
         value={hash}
         onChange={(e) => setHash(e.target.value)}
       />
+
       <button
         onClick={handleVerify}
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
