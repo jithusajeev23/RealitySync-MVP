@@ -49,12 +49,12 @@ def upload_file():
 
     db.collection("realitysync").add(metadata)
 
-return jsonify({
-    "message": "Proof stored successfully",
-    "reality_hash": reality_hash,
-    "verify_url": f"http://localhost:3000/verify?hash={reality_hash}",
-    "trustReceipt": f"trust://{reality_hash}"
-}), 200
+    return jsonify({
+        "message": "Proof stored successfully",
+        "reality_hash": reality_hash,
+        "verify_url": f"http://localhost:3000/verify?hash={reality_hash}",
+        "trustReceipt": f"trust://{reality_hash}"
+    }), 200
 
 
 @app.route("/verify/<hash>", methods=["GET"])
