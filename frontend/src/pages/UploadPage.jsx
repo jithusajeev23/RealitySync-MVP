@@ -68,7 +68,7 @@ function UploadPage() {
             ✅ Uploaded successfully! <br />
             Trust Receipt:{" "}
             <a
-              href={`/verify?hash=${trustReceipt.replace("trust://", "")}`}
+              href={`/verify?hash=${trustReceipt.replace("")}`}
               className="text-blue-600 underline break-all"
             >
               {trustReceipt}
