@@ -1,88 +1,70 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
-import hashlib
-from datetime import datetime
+from werkzeug.utils import secure_filename
 import os
+import hashlib
+import time
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)
+UPLOAD_FOLDER = 'uploads'
+RECORD_FILE = 'records.json'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Load Firebase credentials from environment variable
-firebase_key_json_str = os.environ["FIREBASE_KEY_JSON_ESCAPED"]
-firebase_key_dict = json.loads(firebase_key_json_str)
-cred = credentials.Certificate(firebase_key_dict)
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+# Load saved records if available
+if os.path.exists(RECORD_FILE):
+    with open(RECORD_FILE, 'r') as f:
+        uploaded_files = json.load(f)
+else:
+    uploaded_files = {}
 
-@app.route('/')
-def home():
-    return jsonify({
-        "message": "✅ RealitySync API is running!",
-        "available_endpoints": {
-            "POST /upload": "Upload a file and get reality hash + trust receipt",
-            "GET /verify/<hash>": "Verify a file by hash",
-            "GET /receipts": "List all verified receipts"
-        }
-    }), 200
+def save_records():
+    with open(RECORD_FILE, 'w') as f:
+        json.dump(uploaded_files, f)
 
-@app.route('/upload', methods=['POST'])
+@app.route("/upload", methods=["POST"])
 def upload_file():
     if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-
+        return jsonify({"error": "No file part"}), 400
     file = request.files['file']
     if file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
+        return jsonify({"error": "No selected file"}), 400
 
-    file_bytes = file.read()
-    reality_hash = hashlib.sha256(file_bytes).hexdigest()
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(filepath)
 
-    metadata = {
-        "filename": file.filename,
-        "reality_hash": reality_hash,
-        "timestamp": datetime.utcnow().isoformat()
+    with open(filepath, 'rb') as f:
+        file_bytes = f.read()
+        hash_val = hashlib.sha256(file_bytes).hexdigest()
+
+    trust_receipt = f"trust://{hash_val}"
+    uploaded_files[hash_val] = {
+        "filename": filename,
+        "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
     }
 
-    db.collection("realitysync").add(metadata)
+    save_records()
 
-    return jsonify({
-        "message": "Proof stored successfully",
-        "reality_hash": reality_hash,
-        "verify_url": f"http://localhost:3000/verify?hash={reality_hash}",
-        "trustReceipt": f"trust://{reality_hash}"
-    }), 200
+    return jsonify({"trustReceipt": trust_receipt})
 
+@app.route("/verify", methods=["GET"])
+def verify_receipt():
+    hash_val = request.args.get("hash")
+    if not hash_val:
+        return jsonify({"error": "Missing hash"}), 400
 
-@app.route("/verify/<hash>", methods=["GET"])
-def verify_receipt(hash):
-    try:
-        docs = db.collection("realitysync").where("reality_hash", "==", hash).stream()
-        for doc in docs:
-            data = doc.to_dict()
-            return jsonify(data), 200
-        return jsonify({"error": "Receipt not found"}), 404
-    except Exception as e:
-        print("🔥 Verification error:", str(e))
-        return jsonify({"error": "Server crashed: " + str(e)}), 500
+    record = uploaded_files.get(hash_val)
+    if record:
+        return jsonify({
+            "verified": True,
+            "filename": record["filename"],
+            "timestamp": record["timestamp"]
+        })
+    else:
+        return jsonify({"verified": False, "error": "Hash not found"}), 404
 
-# ✅ ADD THIS NEW ROUTE BELOW
-@app.route("/receipts", methods=["GET"])
-def get_receipts():
-    try:
-        docs = db.collection("realitysync").stream()
-        result = []
-        for doc in docs:
-            result.append(doc.to_dict())
-        return jsonify(result), 200
-    except Exception as e:
-        return jsonify({"error": "Error fetching receipts: " + str(e)}), 500
-
-# 🚀 Entry point
-if __name__ == '__main__':
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+if __name__ == "__main__":
+    app.run(debug=True)
