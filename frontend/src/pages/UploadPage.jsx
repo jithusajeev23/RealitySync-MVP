@@ -3,21 +3,24 @@ import { useState } from "react";
 function UploadPage() {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [trustReceipt, setTrustReceipt] = useState("");
+  const [error, setError] = useState("");
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
-    setMessage("");
+    setTrustReceipt("");
+    setError("");
   };
 
   const handleUpload = async () => {
     if (!file) {
-      setMessage("Please select a file first.");
+      setError("Please select a file first.");
       return;
     }
 
     setUploading(true);
-    setMessage("Uploading...");
+    setTrustReceipt("");
+    setError("");
 
     const formData = new FormData();
     formData.append("file", file);
@@ -31,12 +34,12 @@ function UploadPage() {
       const data = await res.json();
 
       if (res.ok) {
-        setMessage(`✅ Uploaded successfully! Trust Receipt: ${data.trustReceipt}`);
+        setTrustReceipt(data.trustReceipt);
       } else {
-        setMessage(`❌ Upload failed: ${data.error || "Unknown error"}`);
+        setError(`❌ Upload failed: ${data.error || "Unknown error"}`);
       }
     } catch (err) {
-      setMessage("❌ Upload failed: Network error");
+      setError("❌ Upload failed: Network error");
     } finally {
       setUploading(false);
     }
@@ -58,7 +61,23 @@ function UploadPage() {
         >
           {uploading ? "Uploading..." : "Upload File"}
         </button>
-        {message && <p className="mt-4 text-sm">{message}</p>}
+
+        {/* ✅ Show Trust Receipt with clickable link */}
+        {trustReceipt && (
+          <div className="text-green-600 mt-4 text-sm">
+            ✅ Uploaded successfully! <br />
+            Trust Receipt:{" "}
+            <a
+              href={`/verify?hash=${trustReceipt.replace("trust://", "")}`}
+              className="text-blue-600 underline break-all"
+            >
+              {trustReceipt}
+            </a>
+          </div>
+        )}
+
+        {/* ❌ Show Error */}
+        {error && <p className="mt-4 text-red-600 text-sm">{error}</p>}
       </div>
     </div>
   );

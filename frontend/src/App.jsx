@@ -1,12 +1,17 @@
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import UploadPage from "./pages/UploadPage";
-
-function App() {
-  return <UploadPage />;
-}
-
-export default App;
-
 import VerifyPage from "./pages/VerifyPage";
 
-// Add inside <Routes> block
-<Route path="/verify" element={<VerifyPage />} />
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<UploadPage />} />
+        <Route path="/verify" element={<VerifyPage />} />
+      </Routes>
+    </Router>
+  );
+}
+
+ export default App;
