@@ -1,62 +1,63 @@
 import React, { useState } from "react";
 
 const VerifyPage = () => {
-  const [hashInput, setHashInput] = useState("");
-  const [hashResult, setHashResult] = useState(null);
-  const [loadingHash, setLoadingHash] = useState(false);
+  const [hash, setHash] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleHashVerify = async () => {
-    setLoadingHash(true);
-    setHashResult(null);
+  const handleVerify = async () => {
+    if (!hash.trim()) return;
 
-    const cleanedHash = hashInput.replace(/^trust:\/\//, "");
+    setLoading(true);
+
+    const cleanedHash = hash.replace(/^trust:\/\//, "");
 
     try {
       const response = await fetch(
         `https://realitysync-backend.onrender.com/verify?hash=${cleanedHash}`
       );
       const data = await response.json();
-      setHashResult(data);
+      setResult(data);
     } catch (err) {
-      setHashResult({ error: "Server error. Please try again." });
+      setResult({ error: "Server error. Please try again." });
     }
 
-    setLoadingHash(false);
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6">🔍 Verify RealitySync Hash</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-100">
+      <h1 className="text-3xl font-bold mb-6">🔍 Verify RealitySync Receipt</h1>
 
-      {/* Hash Input */}
+      {/* Input Field */}
       <input
-        className="border p-2 w-full max-w-md mb-4 rounded"
+        className="border border-gray-400 p-2 w-full max-w-md mb-4 rounded"
         type="text"
         placeholder="Enter reality hash (e.g., trust://...)"
-        value={hashInput}
-        onChange={(e) => setHashInput(e.target.value)}
+        value={hash}
+        onChange={(e) => setHash(e.target.value)}
       />
 
-      {/* Verify Button */}
+      {/* SEPARATE Verify Button */}
       <button
-        onClick={handleHashVerify}
-        className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
-        disabled={loadingHash}
+        onClick={handleVerify}
+        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-6"
+        disabled={loading}
       >
-        {loadingHash ? "Verifying Hash..." : "Verify Hash"}
+        {loading ? "Verifying..." : "🔍 Verify Hash"}
       </button>
 
-      {/* Results */}
-      {hashResult && (
-        <div className="mt-6 bg-white p-4 rounded shadow w-full max-w-md">
-          {hashResult.error ? (
-            <p className="text-red-600 font-semibold">{hashResult.error}</p>
+      {/* Result Box */}
+      {result && (
+        <div className="bg-white p-4 rounded shadow w-full max-w-md">
+          {result.error ? (
+            <p className="text-red-600 font-semibold">{result.error}</p>
           ) : (
             <>
               <p className="text-green-600 font-semibold">✅ Receipt Found</p>
-              <p><strong>Filename:</strong> {hashResult.filename}</p>
-              <p><strong>Reality Hash:</strong> trust://{hashInput.replace(/^trust:\/\//, '')}</p>
-              <p><strong>Timestamp:</strong> {hashResult.timestamp}</p>
+              <p><strong>Filename:</strong> {result.filename}</p>
+              <p><strong>Reality Hash:</strong> trust://{hash.replace(/^trust:\/\//, "")}</p>
+              <p><strong>Timestamp:</strong> {result.timestamp}</p>
             </>
           )}
         </div>
