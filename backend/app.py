@@ -1,12 +1,9 @@
-# backend/app.py
-
 import hashlib
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 
 import os
-import hashlib
 import time
 import json
 
@@ -61,7 +58,11 @@ def upload_file():
 
     save_records()
 
-    return jsonify({"trustReceipt": trust_receipt})
+    return jsonify({
+        "message": "Upload successful",
+        "trustHash": hash_val,           # ✅ Returned to frontend
+        "trustReceipt": trust_receipt    # ✅ Optional
+    }), 200
 
 # ✅ Trust Receipt Verification Endpoint
 @app.route("/verify", methods=["GET"])
