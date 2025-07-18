@@ -1,25 +1,21 @@
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
-from flask_cors import CORS  # ✅ Enable CORS
+from flask_cors import CORS
 
 import os
 import hashlib
 import time
 import json
 
-# Optional: Firebase imports if used later (currently not in use)
-# import firebase_admin
-# from firebase_admin import credentials, firestore
-
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # ✅ Allow CORS from all origins (for dev); restrict later if needed
+CORS(app)  # Enable CORS for frontend-backend connection
 
 # Constants
 UPLOAD_FOLDER = 'uploads'
 RECORD_FILE = 'records.json'
 
-# Ensure upload directory exists
+# Ensure upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Load previous file records
@@ -29,7 +25,7 @@ if os.path.exists(RECORD_FILE):
 else:
     uploaded_files = {}
 
-# Helper: Save records to JSON file
+# Helper to save records
 def save_records():
     with open(RECORD_FILE, 'w') as f:
         json.dump(uploaded_files, f)
@@ -39,6 +35,7 @@ def save_records():
 def upload_file():
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
+
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
@@ -52,7 +49,7 @@ def upload_file():
         file_bytes = f.read()
         hash_val = hashlib.sha256(file_bytes).hexdigest()
 
-    # Save metadata with trust receipt
+    # Save trust receipt info
     trust_receipt = f"trust://{hash_val}"
     uploaded_files[hash_val] = {
         "filename": filename,
@@ -63,14 +60,14 @@ def upload_file():
 
     return jsonify({"trustReceipt": trust_receipt})
 
-# ✅ Trust Receipt Verification
+# ✅ Trust Receipt Verification Endpoint
 @app.route("/verify", methods=["GET"])
 def verify_receipt():
     hash_val = request.args.get("hash")
     if not hash_val:
         return jsonify({"error": "Missing hash"}), 400
 
-    # Remove "trust://" prefix if included
+    # Remove "trust://" prefix if present
     if hash_val.startswith("trust://"):
         hash_val = hash_val.replace("trust://", "")
 
@@ -79,11 +76,12 @@ def verify_receipt():
         return jsonify({
             "verified": True,
             "filename": record["filename"],
-            "timestamp": record["timestamp"]
+            "timestamp": record["timestamp"],
+            "reality_hash": hash_val  # ✅ Add hash to response
         })
     else:
         return jsonify({"verified": False, "error": "Hash not found"}), 404
 
-# Run the app (Render will override this in production)
+# Run the app (used in local dev only)
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
