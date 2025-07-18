@@ -1,69 +1,81 @@
-import React, { useState } from "react";
+// pages/VerifyPage.jsx
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useSearchParams, Link } from "react-router-dom";
 
-const VerifyPage = () => {
-  const [hash, setHash] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+function VerifyPage() {
+  const [searchParams] = useSearchParams();
+  const defaultHash = searchParams.get("hash") || "";
+
+  const [receiptHash, setReceiptHash] = useState(defaultHash);
+  const [verificationResult, setVerificationResult] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (defaultHash) {
+      handleVerify();
+    }
+    // eslint-disable-next-line
+  }, []);
 
   const handleVerify = async () => {
-    if (!hash.trim()) return;
-
-    setLoading(true);
-
-    const cleanedHash = hash.replace(/^trust:\/\//, "");
-
-    try {
-      const response = await fetch(
-        `https://realitysync-backend.onrender.com/verify?hash=${cleanedHash}`
-      );
-      const data = await response.json();
-      setResult(data);
-    } catch (err) {
-      setResult({ error: "Server error. Please try again." });
+    if (!receiptHash) {
+      setErrorMessage("Please enter a receipt hash.");
+      return;
     }
 
-    setLoading(false);
+    try {
+      const response = await axios.get(
+        `https://realitysync-backend.onrender.com/verify?hash=${receiptHash}`
+      );
+      setVerificationResult(response.data);
+      setErrorMessage("");
+    } catch (error) {
+      console.error("Verification error:", error);
+      setErrorMessage("❌ Receipt not found.");
+      setVerificationResult(null);
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6">🔍 Verify RealitySync Receipt</h1>
-
-      {/* Input Field */}
+    <div className="min-h-screen p-6 bg-white text-black font-mono">
+      <h1 className="text-2xl font-bold mb-4">RealitySync - Verify Receipt</h1>
       <input
-        className="border border-gray-400 p-2 w-full max-w-md mb-4 rounded"
         type="text"
-        placeholder="Enter reality hash (e.g., trust://...)"
-        value={hash}
-        onChange={(e) => setHash(e.target.value)}
+        value={receiptHash}
+        onChange={(e) => setReceiptHash(e.target.value)}
+        placeholder="Enter receipt hash"
+        className="w-full px-3 py-2 border border-gray-400 rounded mb-4"
       />
-
-      {/* SEPARATE Verify Button */}
       <button
         onClick={handleVerify}
-        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-6"
-        disabled={loading}
+        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
       >
-        {loading ? "Verifying..." : "🔍 Verify Hash"}
+        Verify Receipt
       </button>
 
-      {/* Result Box */}
-      {result && (
-        <div className="bg-white p-4 rounded shadow w-full max-w-md">
-          {result.error ? (
-            <p className="text-red-600 font-semibold">{result.error}</p>
-          ) : (
-            <>
-              <p className="text-green-600 font-semibold">✅ Receipt Found</p>
-              <p><strong>Filename:</strong> {result.filename}</p>
-              <p><strong>Reality Hash:</strong> trust://{hash.replace(/^trust:\/\//, "")}</p>
-              <p><strong>Timestamp:</strong> {result.timestamp}</p>
-            </>
-          )}
+      {errorMessage && <p className="mt-4 text-red-600">{errorMessage}</p>}
+
+      {verificationResult && (
+        <div className="mt-4">
+          <p className="text-green-600 font-bold">✅ Receipt Found</p>
+          <p>
+            <strong>Filename:</strong> {verificationResult.filename}
+          </p>
+          <p>
+            <strong>Reality Hash:</strong> {verificationResult.hash}
+          </p>
+          <p>
+            <strong>Timestamp:</strong> {verificationResult.timestamp}
+          </p>
         </div>
       )}
+
+      <Link to="/" className="block mt-6 text-blue-600 underline">
+        ⬅️ Back to Upload Page
+      </Link>
     </div>
   );
-};
+}
 
 export default VerifyPage;
