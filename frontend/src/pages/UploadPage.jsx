@@ -1,23 +1,22 @@
-// src/pages/UploadPage.jsx
+// frontend/src/pages/UploadPage.jsx
 
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
 
 function UploadPage() {
   const [file, setFile] = useState(null);
-  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState('');
   const [hash, setHash] = useState('');
 
-  const handleFileChange = (event) => {
-    setFile(event.target.files[0]);
-    setMessage('');
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+    setStatus('');
     setHash('');
   };
 
   const handleUpload = async () => {
     if (!file) {
-      setMessage('Please select a file first.');
+      setStatus('❌ No file selected');
       return;
     }
 
@@ -26,70 +25,33 @@ function UploadPage() {
 
     try {
       const response = await axios.post(
-        'https://realitysync-backend.onrender.com/upload',
-        formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        }
+        'https://realitysync-backend.onrender.com/upload', // replace with your actual backend URL
+        formData
       );
-
-      if (response.data && response.data.trustHash) {
-        setMessage('✅ Uploaded successfully!');
-        setHash(response.data.trustHash);
-      } else {
-        setMessage('❌ Upload succeeded but no hash returned.');
-      }
+      setStatus('✅ Uploaded successfully!');
+      setHash(response.data.hash);
     } catch (error) {
-      console.error(error);
-      setMessage('❌ Upload failed: ' + error.message);
-    }
-  };
-
-  const copyHashToClipboard = () => {
-    if (hash) {
-      navigator.clipboard.writeText(hash);
-      alert('Hash copied to clipboard!');
+      setStatus('❌ Upload failed: ' + error.message);
     }
   };
 
   return (
-    <div className="p-6 max-w-md mx-auto text-center">
+    <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">RealitySync - Upload File</h1>
+      <input type="file" onChange={handleFileChange} />
+      <button onClick={handleUpload} className="ml-2 px-4 py-2 bg-blue-500 text-white">Upload File</button>
 
-      <input type="file" onChange={handleFileChange} className="mb-4" />
-      <br />
-      <button
-        onClick={handleUpload}
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Upload File
-      </button>
-
-      {message && (
-        <div className="mt-4 text-green-600 font-semibold">{message}</div>
-      )}
-
+      {status && <p className="mt-4">{status}</p>}
       {hash && (
-        <div className="mt-4">
-          <div>
-            <strong>File Trust Hash:</strong>
-            <pre className="break-all bg-gray-100 p-2 rounded">{hash}</pre>
-          </div>
-          <button
-            onClick={copyHashToClipboard}
-            className="mt-2 px-3 py-1 bg-gray-800 text-white rounded hover:bg-gray-900"
-          >
-            Copy Hash
-          </button>
-          <br />
-          <Link
-            to={`/verify?hash=${hash}`}
-            className="text-blue-600 underline mt-3 inline-block"
-          >
-            🔍 Verify this file
-          </Link>
+        <div className="mt-2">
+          <p><strong>File Hash:</strong></p>
+          <code className="bg-gray-100 p-2 rounded inline-block">{hash}</code>
         </div>
       )}
+
+      <div className="mt-6">
+        <a href="/verify" className="text-blue-700 underline">🔍 Go to Verify Receipt Page</a>
+      </div>
     </div>
   );
 }
