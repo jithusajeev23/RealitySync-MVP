@@ -1,87 +1,95 @@
-import { useState } from "react";
+// src/pages/UploadPage.jsx
+
+import React, { useState } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 function UploadPage() {
   const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [trustReceipt, setTrustReceipt] = useState("");
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState('');
+  const [hash, setHash] = useState('');
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-    setTrustReceipt("");
-    setError("");
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
+    setMessage('');
+    setHash('');
   };
 
   const handleUpload = async () => {
     if (!file) {
-      setError("Please select a file first.");
+      setMessage('Please select a file first.');
       return;
     }
 
-    setUploading(true);
-    setTrustReceipt("");
-    setError("");
-
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
 
     try {
-      const res = await fetch("https://realitysync-backend.onrender.com/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await axios.post(
+        'https://realitysync-api.onrender.com/upload',
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
+      );
 
-      const data = await res.json();
-
-      if (res.ok && data.trustReceipt) {
-        setTrustReceipt(data.trustReceipt);
+      if (response.data && response.data.trustHash) {
+        setMessage('✅ Uploaded successfully!');
+        setHash(response.data.trustHash);
       } else {
-        setError(`❌ Upload failed: ${data.error || "Unknown error"}`);
+        setMessage('❌ Upload succeeded but no hash returned.');
       }
-    } catch (err) {
-      setError("❌ Upload failed: Network error");
-    } finally {
-      setUploading(false);
+    } catch (error) {
+      console.error(error);
+      setMessage('❌ Upload failed: ' + error.message);
+    }
+  };
+
+  const copyHashToClipboard = () => {
+    if (hash) {
+      navigator.clipboard.writeText(hash);
+      alert('Hash copied to clipboard!');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
-      <h1 className="text-3xl font-bold mb-6">RealitySync</h1>
+    <div className="p-6 max-w-md mx-auto text-center">
+      <h1 className="text-2xl font-bold mb-4">RealitySync - Upload File</h1>
 
-      <div className="bg-white shadow p-6 rounded w-full max-w-md">
-        <input
-          type="file"
-          onChange={handleFileChange}
-          className="mb-4 block w-full"
-        />
-        <button
-          onClick={handleUpload}
-          disabled={uploading}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 w-full"
-        >
-          {uploading ? "Uploading..." : "Upload File"}
-        </button>
+      <input type="file" onChange={handleFileChange} className="mb-4" />
+      <br />
+      <button
+        onClick={handleUpload}
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Upload File
+      </button>
 
-        {/* ✅ Trust Receipt Display */}
-        {trustReceipt && (
-          <div className="text-green-600 mt-4 text-sm">
-            ✅ Uploaded successfully! <br />
-            Trust Receipt:{" "}
-            <a
-              href={`/verify?hash=${trustReceipt.replace("trust://", "")}`}
-              className="text-blue-600 underline break-all"
-            >
-              {trustReceipt}
-            </a>
+      {message && (
+        <div className="mt-4 text-green-600 font-semibold">{message}</div>
+      )}
+
+      {hash && (
+        <div className="mt-4">
+          <div>
+            <strong>File Trust Hash:</strong>
+            <pre className="break-all bg-gray-100 p-2 rounded">{hash}</pre>
           </div>
-        )}
-
-        {/* ❌ Error Display */}
-        {error && (
-          <p className="mt-4 text-red-600 text-sm">{error}</p>
-        )}
-      </div>
+          <button
+            onClick={copyHashToClipboard}
+            className="mt-2 px-3 py-1 bg-gray-800 text-white rounded hover:bg-gray-900"
+          >
+            Copy Hash
+          </button>
+          <br />
+          <Link
+            to={`/verify?hash=${hash}`}
+            className="text-blue-600 underline mt-3 inline-block"
+          >
+            🔍 Verify this file
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
