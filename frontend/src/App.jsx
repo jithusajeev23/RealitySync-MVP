@@ -1,73 +1,76 @@
-// App.jsx
-import React, { useState } from "react";
-import axios from "axios";
-import { Link } from "react-router-dom";
+import React, { useState } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
 
-function App() {
+function UploadPage() {
   const [file, setFile] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState("");
-  const [trustReceipt, setTrustReceipt] = useState("");
+  const [message, setMessage] = useState('');
+  const [hash, setHash] = useState('');
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-    setUploadStatus("");
-    setTrustReceipt("");
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
   };
 
   const handleUpload = async () => {
     if (!file) {
-      setUploadStatus("Please select a file first.");
+      setMessage('❌ Please select a file first.');
       return;
     }
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
 
     try {
       const response = await axios.post(
-        "https://realitysync-backend.onrender.com/upload",
-        formData
+        'https://realitysync-api.onrender.com/upload',
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
       );
-      setTrustReceipt(response.data.trust_receipt);
-      setUploadStatus("✅ Uploaded successfully!");
+
+      console.log("🔍 Full backend response:", response.data); // Debug log
+
+      // Try all possible keys returned
+      const returnedHash = response.data.trustHash || response.data.reality_hash || response.data.hash;
+
+      if (returnedHash) {
+        setMessage('✅ Uploaded successfully!');
+        setHash(returnedHash);
+      } else {
+        setMessage('✅ Uploaded, but no hash returned.');
+        setHash('');
+      }
+
     } catch (error) {
-      console.error("Upload error:", error);
-      setUploadStatus("❌ Upload failed.");
+      console.error('❌ Upload error:', error);
+      setMessage('❌ Upload failed: ' + error.message);
+      setHash('');
     }
   };
 
   return (
-    <div className="min-h-screen p-6 bg-white text-black font-mono">
-      <h1 className="text-2xl font-bold mb-4">RealitySync - Upload File</h1>
-      <input type="file" onChange={handleFileChange} className="mb-4" />
-      <button
-        onClick={handleUpload}
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Upload File
-      </button>
-
-      {uploadStatus && <p className="mt-4">{uploadStatus}</p>}
-
-      {trustReceipt && (
-        <div className="mt-4">
-          <p>
-            <strong>Trust Receipt:</strong>{" "}
-            <a
-              href={`/verify?hash=${encodeURIComponent(trustReceipt)}`}
-              className="text-blue-600 underline"
-            >
-              {trustReceipt}
-            </a>
-          </p>
+    <div style={{ padding: '30px' }}>
+      <h1>RealitySync - Upload File</h1>
+      <input type="file" onChange={handleFileChange} />
+      <button onClick={handleUpload}>Upload File</button>
+      {message && <p>{message}</p>}
+      {hash && (
+        <div>
+          <p><strong>📎 Your Trust Hash:</strong></p>
+          <textarea
+            readOnly
+            value={hash}
+            rows={2}
+            style={{ width: '100%', fontSize: '14px' }}
+          />
         </div>
       )}
-
-      <Link to="/verify" className="block mt-6 text-blue-600 underline">
-        🔍 Go to Verify Receipt Page
-      </Link>
+      <p>
+        🔍 <Link to="/verify">Go to Verify Receipt Page</Link>
+      </p>
     </div>
   );
 }
 
-export default App;
+export default UploadPage;
