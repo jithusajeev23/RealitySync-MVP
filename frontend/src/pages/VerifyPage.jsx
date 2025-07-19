@@ -1,4 +1,3 @@
-// pages/VerifyPage.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useSearchParams, Link } from "react-router-dom";
@@ -40,6 +39,7 @@ function VerifyPage() {
   return (
     <div className="min-h-screen p-6 bg-white text-black font-mono">
       <h1 className="text-2xl font-bold mb-4">RealitySync - Verify Receipt</h1>
+      
       <input
         type="text"
         value={receiptHash}
@@ -47,6 +47,7 @@ function VerifyPage() {
         placeholder="Enter receipt hash"
         className="w-full px-3 py-2 border border-gray-400 rounded mb-4"
       />
+      
       <button
         onClick={handleVerify}
         className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
@@ -63,7 +64,7 @@ function VerifyPage() {
             <strong>Filename:</strong> {verificationResult.filename}
           </p>
           <p>
-            <strong>Reality Hash:</strong> {verificationResult.hash}
+            <strong>Reality Hash:</strong> {verificationResult.reality_hash}
           </p>
           <p>
             <strong>Timestamp:</strong> {verificationResult.timestamp}
